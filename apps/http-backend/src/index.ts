@@ -120,18 +120,39 @@ app.post("/room", middleware, async (req, res) => {
     return;
   }
   // db call
-  const room = await prismaClient.room.create({
-    data: {
-      slug: parsedData.data.slug,
-      // @ts-ignore 
-      adminId: req.userId,
+  try {
+    const room = await prismaClient.room.create({
+      data: {
+        slug: parsedData.data.slug,
+        // @ts-ignore
+        adminId: req.userId,
+      },
+    });
+    res.json({
+      roomId: room.id,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/chats/:roomId", async (req, res) => {
+  console.log(req.params.roomId);
+  const roomId = Number(req.params.roomId);
+  console.log(roomId);
+  // db call
+  const messages = await prismaClient.chat.findMany({
+    where: {
+      roomId: roomId,
+    },
+    take: 50,
+    orderBy: {
+      id: "desc",
     },
   });
-  res.json({
-    roomId: room.id,
-  });
+  console.log(messages);
+  res.json({ messages });
 });
-// create room
 
 app.listen(3001, () => {
   console.log("Server is running on http://localhost:3001");
